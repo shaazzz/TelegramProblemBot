@@ -8,7 +8,7 @@ var users= {};
 var problems= {};
 var newProblems= {};
 // mapping id of problems to their text
-var tags= {};
+var tags={};
 
 function newUser(name,username){
     let ans={
@@ -35,39 +35,51 @@ function newProblem(){
 }
 
 function load(){
-    let dat= JSON.parse( fs.readFileSync("./data.json","utf-8") );
+    let now=parseInt( fs.readFileSync(`./backup/now`,"utf-8") );
+    let dat= JSON.parse( fs.readFileSync(`./backup/data${now}.json`,"utf-8") );
     users= dat.users;
     problems= dat.problems;
-    tags= dat.tags;
     newProblems= dat.newProblems;
+    update_tags();            
 }
 function save(){
-    let dat={users,problems,tags,newProblems};
-    fs.writeFileSync("./data.json",JSON.stringify(dat));
+    let dat={users,problems,newProblems};
+    let now=parseInt( fs.readFileSync(`./backup/now`,"utf-8") );
+    now=(now+1) % 200;
+    fs.writeFileSync(`./backup/data${now}.json`,JSON.stringify(dat));
+    fs.writeFileSync(`./backup/now`,now);
 }
-function clear(){
-    users={};
-    problems={};
+function update_tags(){
     tags={};
-    setTimeout(save,60 * 1000);
+    for(let x in problems){
+        if(problems[x] === undefined) continue;
+        for(let y in problems[x].tag){
+            if(tags[y] === undefined)
+                tags[y]=1;
+            else
+                tags[y]++;
+        }
+    }
 }
-
 
 var send= async (text, id)=>{ await sendMessage(text, id, keyboards[users[id].state]); };
 
 
 ///////////////////////// nabayad esme soal ya har chiz dige bargard aval kar bashe!
 
+function normalStr(s){
+    var st=0, en=s.length-1;
+    while(st<s.length && s[st] === ' ') st++;
+    while(en>=0 && s[en] === ' ') en--;
+    en++;
+    return s.slice(st,en);
+  }
+
 const restart={
     key : (s)=> s === "برگرد اول کار",
     func: async (msg)=>{
         let usr= users[msg.from.id];
         if(usr.state === "addTag" || usr.state === "addDif" || usr.state === "addSSH"){
-            for(let tg in newProblems[usr.lstGiven].tag){
-                tags[tg]--;
-                if(tags[tg] === 0)
-                    tags[tg]= undefined;
-            }
             newProblems[usr.lstGiven]= undefined;
         }
         usr.state="start";
@@ -193,6 +205,9 @@ const states = {
         {
             key : (s)=>{
                 s=s.split('-');
+                for(let i in s){
+                    s[i]= normalStr(s[i]);
+                }
                 for(let x of s){
                     if(x === "هر تگی")
                         return true;
@@ -218,6 +233,10 @@ const states = {
                 let usr= users[msg.from.id];
                 let s=usr.lstTag.split('-');
                 let anyTag=false;
+
+                for(let i in s){
+                    s[i]= normalStr(s[i]);
+                }
                 for(let x of s){
                     if(x === "هر تگی")
                         anyTag=true;
@@ -231,6 +250,7 @@ const states = {
                     return true;
                 }
                 for(let prob in problems){
+                    if(problems[prob] === undefined) continue;
                     if(checker(prob) && (msg.text === "سختی برام مهم نیست" || problems[prob].dif === msg.text)){
                         usr.lstGiven=prob;
                         usr.state="givenProblem";
@@ -404,6 +424,7 @@ const states = {
                 usr.state="nowAdmin";
                 problems[usr.lstGiven]= newProblems[usr.lstGiven];
                 newProblems[usr.lstGiven]= undefined;
+                update_tags();
                 await send("تایید شد.", msg.from.id);
             }
         },
@@ -468,10 +489,10 @@ const states = {
                 let txt= msg.text;
                 usr.state="addDif";
                 let s=txt.split('-');
+                for(let i in s){
+                    s[i]= normalStr(s[i]);
+                }
                 for(let tg of s){
-                    if(tags[tg] === undefined)
-                        tags[tg]=0;
-                    tags[tg]++;
                     newProblems[usr.lstGiven].tag[tg]= true;
                 }
                 await send("سختی سوال را انتخاب کنید.",  msg.from.id);                
@@ -486,7 +507,7 @@ const states = {
                 let usr= users[msg.from.id];
                 newProblems[usr.lstGiven].dif= msg.text;
                 usr.state="addSSH";
-                await send("حالا صورت سوال سپس هینت سوال سپس حل سوال را بنویسید که با $ از هم جدا شده اند.همچنین در متن صورت سوال یا حل سوال یا هینت سوال نباید از $ استفاده کنید.\nمثال:\n2+2=?\nهینت:به شدت بدیهی هست فکر کن!\n4", msg.from.id);
+                await send("حالا صورت سوال سپس هینت سوال سپس حل سوال را بنویسید که با $ از هم جدا شده اند.همچنین در متن صورت سوال یا حل سوال یا هینت سوال نباید از $ استفاده کنید.\nمثال:\n2+2=?\n$\nبه شدت بدیهی هست فکر کن!\n$\n4", msg.from.id);
             }
         }
     ],
@@ -513,6 +534,7 @@ const states = {
                 if(usr.isAdmin){
                     problems[usr.lstGiven]= newProblems[usr.lstGiven];
                     newProblems[usr.lstGiven]= undefined;
+                    update_tags();
                     usr.state="nowAdmin";
                     await send("سوال با موفقیت اضافه شد.", msg.from.id);
                 }
@@ -535,11 +557,8 @@ const states = {
                 let usr= users[msg.from.id];
                 usr.state="nowAdmin";
                 let txt= msg.text;
-                for(let x in problems[txt].tag){
-                    tags[x]--;
-                    if(tags[x] === 0) tags[x]= undefined;
-                }
                 problems[txt]= undefined;
+                update_tags();
                 await send("سوال حذف شد.", msg.from.id);
             }
         }
@@ -550,9 +569,6 @@ export async function handleMessage(msg){
     let usr= users[ msg.from.id ];
     if(usr === undefined) 
         usr= users[ msg.from.id ]= newUser(msg.from.first_name, msg.from.username);
-
-    console.log("SALAMMMMM", usr.lstGiven);
-
     for(let nxt of states[ usr.state ]){
         if(nxt.key(msg.text)){
             await nxt.func(msg);    
@@ -562,5 +578,5 @@ export async function handleMessage(msg){
     await send("چی شده؟!",msg.from.id);
 }
 
-setInterval(save, 10 * 1000);//// baadan beshe har 1 daghighe
+setInterval(save, 10 * 60 * 1000);//// baadan beshe har 1 daghighe
 load();

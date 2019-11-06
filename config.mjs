@@ -1,4 +1,4 @@
 export const config={
-    token : "salaaaaaaaaaaaaaam",
-    adminPassword : ""
+    token : "994668971:AAEAs3hCirSdg09SRo4OtBX3QMgzNQFQWzM",
+    adminPassword : "thankYouShayan"
 };
