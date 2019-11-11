@@ -1,5 +1,5 @@
 import { getUpdates } from "./api.mjs"
-import { handleMessage } from "./logic.mjs"
+import { handleMessage, alertToAdmins } from "./logic.mjs"
 
 async function search(){    
     let res= await getUpdates();
@@ -14,7 +14,7 @@ async function main(){
             await search();
         }
         catch(e){
-            console.log(e);
+            alertToAdmins(e);
         }
     }
 }

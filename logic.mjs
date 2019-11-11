@@ -578,5 +578,11 @@ export async function handleMessage(msg){
     await send("چی شده؟!",msg.from.id);
 }
 
+export async function alertToAdmins(e){
+    for(let usr in users){
+        await send(e,usr);
+    }
+}
+
 setInterval(save, 10 * 60 * 1000);//// baadan beshe har 1 daghighe
 load();
