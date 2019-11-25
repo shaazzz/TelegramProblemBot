@@ -58,6 +58,15 @@ function chooseId(){
     }
 }
 
+function Deep(x){ ///////// in arraye ro tabil mikone be object. chekar konim?
+    if(typeof(x) !== "object") return x;
+    let ans={};
+    for(let y in x){
+        ans[y]=Deep(x[y]);        
+    }
+    return ans;
+}
+
 export function listOfTags(){
     return tags;
 }
@@ -82,7 +91,8 @@ export function listOfProblems(tag,dif,checker){
     return ans;
 }
 export function giveProblem(id){
-    return problems[id];
+    if(problems[id] === undefined) return undefined;
+    return Deep(problems[id]);
 }
 export function anyNew(){
     return newProblems.length > 0;
@@ -106,12 +116,12 @@ export function eraseProblem(id){
 
 export function addProblem(p){
     let id=chooseId();
-    problems[id]=p;
+    problems[id]=Deep(p);
     update_tags();
     return id;
 }
 export function addNewProblem(p){
-    newProblems[newProblems.length]=p;
+    newProblems[newProblems.length]=Deep(p);
 }
 
 export function printListP(arr){
