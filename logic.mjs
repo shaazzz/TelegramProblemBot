@@ -1,14 +1,26 @@
 import fs from "fs"
-import { sendMessage } from "./api.mjs"
+import { sendMessage , sendBackup } from "./api.mjs"
 import { keyboards } from "./keyboards.mjs"
 import { config } from "./config.mjs"
+import { listOfTags, listOfProblems, giveProblem, anyNew, giveNewProblem, eraseProblem, addProblem, addNewProblem, save as save2, printListP, printProblem} from "./dataHandle.mjs"
 
 var users= {};
-// mapping ids to an object
-var problems= {};
-var newProblems= {};
-// mapping id of problems to their text
-var tags={};
+
+
+const directory="./backup/users";
+
+function load(){
+    let now=parseInt( fs.readFileSync(`${directory}/now`,"utf-8") );
+    let dat= JSON.parse( fs.readFileSync(`${directory}/${now}.json`,"utf-8") );
+    users=dat.users;
+}
+function save(){
+    let dat={users};
+    let now=parseInt( fs.readFileSync(`${directory}/now`,"utf-8") );
+    now=(now+1) % 200;
+    fs.writeFileSync(`${directory}/${now}.json`,JSON.stringify(dat));
+    fs.writeFileSync(`${directory}/now`,now);
+}
 
 function newUser(name,username){
     let ans={
@@ -18,54 +30,16 @@ function newUser(name,username){
         username,
         solved: {},
         notSolved : {},
-        lstTag:undefined,
-        lstGiven:undefined
+        lstGiven : {},
+        lstGivenId : undefined
     };
     return ans;
 }
-function newProblem(){
-    let ans={
-        tag:{},
-        dif:undefined,
-        text:undefined,
-        hint:undefined,
-        soloution:undefined
-    }
-    return ans;
-}
 
-function load(){
-    let now=parseInt( fs.readFileSync(`./backup/now`,"utf-8") );
-    let dat= JSON.parse( fs.readFileSync(`./backup/data${now}.json`,"utf-8") );
-    users= dat.users;
-    problems= dat.problems;
-    newProblems= dat.newProblems;
-    update_tags();            
-}
-function save(){
-    let dat={users,problems,newProblems};
-    let now=parseInt( fs.readFileSync(`./backup/now`,"utf-8") );
-    now=(now+1) % 200;
-    fs.writeFileSync(`./backup/data${now}.json`,JSON.stringify(dat));
-    fs.writeFileSync(`./backup/now`,now);
-}
-function update_tags(){
-    tags={};
-    for(let x in problems){
-        if(problems[x] === undefined) continue;
-        for(let y in problems[x].tag){
-            if(tags[y] === undefined)
-                tags[y]=1;
-            else
-                tags[y]++;
-        }
-    }
-}
-
-var send= async (text, id)=>{ await sendMessage(text, id, keyboards[users[id].state]); };
-
-
-///////////////////////// nabayad esme soal ya har chiz dige bargard aval kar bashe!
+var send= async (text, id)=>{ 
+    text+="\n";
+    await sendMessage(text, id, keyboards[users[id].state]); 
+};
 
 function normalStr(s){
     var st=0, en=s.length-1;
@@ -73,19 +47,29 @@ function normalStr(s){
     while(en>=0 && s[en] === ' ') en--;
     en++;
     return s.slice(st,en);
-  }
-
+}
 const restart={
     key : (s)=> s === "برگرد اول کار",
     func: async (msg)=>{
         let usr= users[msg.from.id];
-        if(usr.state === "addTag" || usr.state === "addDif" || usr.state === "addSSH"){
-            newProblems[usr.lstGiven]= undefined;
+        if(usr.state === "confirmProblem"){
+            addNewProblem(usr.lstGiven);
         }
         usr.state="start";
         await send("حله!", msg.from.id);
     }
 };
+
+function newP(usr){
+    return (x)=> usr.solved[x] !== true && usr.notSolved[x] !== true;
+}
+function tryP(usr){
+    return (x)=> usr.solved[x] !== true && usr.notSolved[x] === true;
+}
+function totP(usr){
+    return (x)=> true;
+}
+
 const states = {
     preStart:[
         {
@@ -93,8 +77,19 @@ const states = {
             func: async (msg)=>{
                 let usr= users[msg.from.id];
                 usr.state= "start";
-                await send(`سلام ${usr.name}\nچه کمکی از دست من بر می آد؟`, msg.from.id);
-                await send("اکثر مواقع اگر بنویسی 'برگرد اول کار' بر می گرده به اینجا!", msg.from.id);
+                let tip1="هر وقت بنویسید 'برگرد اول کار' بر می گرده به اینجا!";
+                let tip2="برای حل کردن سوال 'سوال بده' و برای اضافه کردن سوال به آرشیو ما از 'سوال بگیر' استفاده کنید.";
+                let tip3="در قسمت 'سوال بده' می توانید به دو روش سوال انتخاب کنید. یا از طریق 'انتخاب اسم' آیدی سوال را (که یک عدد انگلیسی است) می نویسید یا از طریق 'انتخاب تگ' با توجه به تگ و سختی سوالی به شما پیشنهاد می شود.";
+                let tip4="اگر می خواهید سوال حل کنید و تگ خاصی مد نظرتان نیست می توانید به جای تگ سوال 'هر تگی' را بنویسید.";
+                let tip5="وقتی با تگ و سختی سوال انتخاب می کنید سوال تکراری به شما داده نخواهد شد. در کل سوال غیرتکراری یا سوال جدید یعنی سوالی که در آن گزینه 'حلش کردم' یا 'حلش رو بگو' یا 'بیخیال بعدا حلش میکنم' انتخاب نشده باشد."
+                let tip6="سوالاتی که در آن 'بیخیال بعدا حلش میکنم' را انتخاب کردید در قسمت 'لیست سوالاتی که زور زدم روشون' قابل دسترسی است!";
+                await send(`سلام ${usr.name}\nبه ربات سوالات شااززز خوش آمدید!`, msg.from.id);
+                await send(tip1, msg.from.id);
+                await send(tip2, msg.from.id);
+                await send(tip3, msg.from.id);
+                await send(tip4, msg.from.id);
+                await send(tip5, msg.from.id);
+                await send(tip6, msg.from.id);                
             }
         }
     ],
@@ -112,7 +107,7 @@ const states = {
             func: async(msg)=>{
                 let usr= users[msg.from.id];
                 usr.state="addName";
-                await send("اسم سوال را وارد کنید.ترجیحا یک کلمه ای و کوتاه باشد.", msg.from.id);
+                await send("اسم سوال را وارد کنید : ", msg.from.id);
             }
         },
         {            
@@ -137,7 +132,7 @@ const states = {
             func: async (msg)=>{
                 let usr= users[msg.from.id];
                 usr.state="chooseName";
-                await send("اسم سوال را وارد کنید:", msg.from.id);
+                await send("آیدی سوال را وارد کنید:", msg.from.id);
             }
         },
         {
@@ -145,10 +140,9 @@ const states = {
             func: async (msg)=>{
                 let usr= users[msg.from.id];
                 usr.state="chooseTag";
-                await send("تگ های مورد نظر را در یک خط و پشت سر هم بنویسید و تنها با - از هم جدا کنید.در صورتیکه تنها یک تگ مورد نظر است از - استفاده نکنید!\nمثال:\nاستقرا-اکسترمال-لانه کبوتری", msg.from.id);
+                await send("تگ های مورد نظر را در یک خط و پشت سر هم بنویسید و تنها با - از هم جدا کنید.در صورتیکه تنها یک تگ مورد نظر است از - استفاده نکنید!\nهمچنین می توانید از نوشتن 'هر تگی' برای گرفتن سوال بدون تگ استفاده کنید.\nمثال:\nاستقرا-اکسترمال-لانه کبوتری", msg.from.id);
                 let str="لیست تگ های موجود:\n";
-                for(let x in tags){
-                    if(tags[x] === undefined) continue;
+                for(let x in listOfTags()){
                     str=str + `${x}\n`;
                 }
                 str=str + `هر تگی\n`;
@@ -160,25 +154,15 @@ const states = {
             func: async (msg)=>{
                 let usr= users[msg.from.id];
                 usr.state="nameOrTag";
-                let str="";
-                for(let x in problems){
-                    if(problems[x] !== undefined)
-                        str= str + x + "\n";
-                }
-                await send(str, msg.from.id);
+                await send( printListP( listOfProblems() ) , msg.from.id);
             }
         },
         {
-            key : (s)=> s==="لیست سوالایی که زور زدم روشون",
+            key : (s)=> s==="لیست سوالاتی که زور زدم روشون",
             func: async (msg)=>{
                 let usr= users[msg.from.id];
                 usr.state="nameOrTag";
-                let str="";
-                for(let x in problems){
-                    if(problems[x] !== undefined && usr.solved[x] !== true && usr.notSolved[x] === true)
-                        str=str + x + "\n";
-                }
-                await send(str, msg.from.id);
+                await send( printListP( listOfProblems( undefined, undefined, tryP(usr) ) ), msg.from.id );
             }
         }        
     ],
@@ -189,13 +173,15 @@ const states = {
             func: async (msg)=>{
                 let usr= users[msg.from.id];
                 let txt=msg.text;
-                if(problems[txt] === undefined){
-                    await send("اسم سوال اشتباه است.\nمی تونی دوباره انتخاب کنی.", msg.from.id);
+                if(giveProblem(txt) === undefined){
+                    await send("سوال با چنین آیدی وجود نداره.\nمی تونی دوباره انتخاب کنی.", msg.from.id);
                 }
                 else{                    
                     usr.state="givenProblem";
-                    usr.lstGiven=txt;
-                    await send(`اسم سوال: ${txt}\n${problems[txt].text}`, msg.from.id);
+                    let p=giveProblem(txt);
+                    usr.lstGivenId=txt;
+                    usr.lstGiven=p;
+                    await send( printProblem(txt), msg.from.id);
                 }
             }
         }
@@ -203,7 +189,7 @@ const states = {
     chooseTag:[
         restart,
         {
-            key : (s)=>{
+            key : (s)=> {
                 s=s.split('-');
                 for(let i in s){
                     s[i]= normalStr(s[i]);
@@ -211,15 +197,27 @@ const states = {
                 for(let x of s){
                     if(x === "هر تگی")
                         return true;
-                    if(tags[x] === undefined) 
+                    if(listOfTags()[x] === undefined) 
                         return false;
                 }
                 return true;
             },
             func: async (msg)=>{
                 let usr= users[msg.from.id];                
+                usr.lstGiven.tag={};
+
                 let s= msg.text;
-                usr.lstTag=s;   
+                s=s.split('-');
+                for(let i in s){
+                    s[i]= normalStr(s[i]);
+                }
+                for(let x of s){
+                    if(x === "هر تگی"){
+                        usr.lstGiven.tag={};
+                        break;
+                    }
+                    usr.lstGiven.tag[x]=true;
+                }
                 usr.state="chooseDif";
                 await send("سختی سوال را انتخاب کنید:", msg.from.id);
             }
@@ -231,35 +229,67 @@ const states = {
             key : (s)=> (s === "آسون" || s === "متوسط" || s === "سخت" || s === "سختی برام مهم نیست"),
             func: async (msg)=>{
                 let usr= users[msg.from.id];
-                let s=usr.lstTag.split('-');
-                let anyTag=false;
+                let s=msg.text;
+                usr.lstGiven.dif = undefined;
+                if(s !== "سختی برام مهم نیست"){
+                    usr.lstGiven.dif=s;
+                }
+                let arr=listOfProblems(usr.lstGiven.tag, usr.lstGiven.dif);
+                if(arr.length === 0){
+                    usr.state = "nameOrTag";
+                    await send("هیچ سوالی با همه این مشخصات موجود نیست.", msg.from.id);
+                }
+                else{
+                    usr.state = "chosenTagDif";
+                    await send("حالا که تگ و سختی رو انتخاب کردی لیست کل سوالا رو می خوای یا لیست سوالای جدید یا فقط یک سوال جدید؟!", msg.from.id);
+                }
+            }
+        }
+    ],
+    chosenTagDif:[
+        restart,
+        {
+            key : (s)=> s === "یک سوال جدید",
+            func : async (msg)=>{
+                let usr= users[msg.from.id];
 
-                for(let i in s){
-                    s[i]= normalStr(s[i]);
+                let arr=listOfProblems(usr.lstGiven.tag, usr.lstGiven.dif, newP(usr));
+                let n= arr.length;
+                let p= arr[ Math.floor( Math.random() * n ) ];
+
+                if(n==0){
+                    await send("هیچ سوال جدیدی با همه این مشخصات موجود نیست.", msg.from.id);
+                    return;
                 }
-                for(let x of s){
-                    if(x === "هر تگی")
-                        anyTag=true;
-                }
-                let checker= (id)=>{
-                    if(usr.solved[id] === true || usr.notSolved[id] === true) return false;
-                    if(anyTag) return true;
-                    for(let x of s){
-                        if(problems[id].tag[x] === undefined) return false;
-                    }
-                    return true;
-                }
-                for(let prob in problems){
-                    if(problems[prob] === undefined) continue;
-                    if(checker(prob) && (msg.text === "سختی برام مهم نیست" || problems[prob].dif === msg.text)){
-                        usr.lstGiven=prob;
-                        usr.state="givenProblem";
-                        await send(`اسم سوال: ${prob}\n${problems[prob].text}`, msg.from.id);
-                        return;
-                    }
-                }
-                usr.state= "nameOrTag";
-                await send("همه سوال هایی که همه این تگ ها رو دارن زدی!\nمی تونی از اول سوال انتخاب کنی.", msg.from.id);
+
+                usr.state="givenProblem";         
+                usr.lstGiven = giveProblem(p);
+                usr.lstGivenId = p;
+                await send( printProblem(p), msg.from.id);                 
+            }
+        },
+        {
+            key : (s)=> s === "لیست کل سوالات",
+            func : async(msg)=>{
+                let usr= users[msg.from.id];
+                usr.state = "chosenTagDif";
+                await send( printListP( listOfProblems(usr.lstGiven.tag, usr.lstGiven.dif, totP(usr)) ), msg.from.id );
+            }
+        },
+        {
+            key : (s)=> s === "لیست سوالات جدید",
+            func : async(msg)=>{
+                let usr= users[msg.from.id];
+                usr.state = "chosenTagDif";
+                await send( printListP( listOfProblems(usr.lstGiven.tag, usr.lstGiven.dif, newP(usr)) ), msg.from.id );
+            }
+        },
+        {
+            key : (s)=> s === "لیست سوالاتی که زور زدم روشون",
+            func : async(msg)=>{
+                let usr= users[msg.from.id];
+                usr.state = "chosenTagDif";
+                await send( printListP( listOfProblems(usr.lstGiven.tag, usr.lstGiven.dif, tryP(usr)) ), msg.from.id );
             }
         }
     ],
@@ -270,7 +300,7 @@ const states = {
             func: async (msg)=>{
                 let usr= users[msg.from.id];
                 usr.state= "givenProblem";
-                await send(problems[ usr.lstGiven ].hint, msg.from.id);
+                await send(usr.lstGiven.hint, msg.from.id);
             }
         },
         {
@@ -278,8 +308,8 @@ const states = {
             func: async (msg)=>{
                 let usr= users[msg.from.id];
                 usr.state= "nameOrTag";
-                usr.solved[ usr.lstGiven ]= true;
-                await send(problems[ usr.lstGiven ].soloution, msg.from.id);
+                usr.solved[ usr.lstGivenId ]= true;
+                await send(usr.lstGiven.soloution, msg.from.id);
                 await send("حیف شد سوزوندی این رو!حالا می تونی دوباره سوال انتخاب کنی.", msg.from.id);
             }
         },
@@ -289,7 +319,7 @@ const states = {
                 let usr= users[msg.from.id];
                 usr.state= "givenProblem";
                 let str="";
-                for(let x in problems[usr.lstGiven].tag)
+                for(let x in usr.lstGiven.tag)
                     str=str + x + " ";
                 await send(str, msg.from.id);
             }
@@ -299,16 +329,16 @@ const states = {
             func: async (msg)=>{
                 let usr= users[msg.from.id];
                 usr.state= "givenProblem";
-                await send(problems[ usr.lstGiven ].dif, msg.from.id);
+                await send(usr.lstGiven.dif, msg.from.id);
             }
         },
         {
             key : (s)=> s==="حلش کردم!",
             func: async (msg)=>{
                 let usr= users[msg.from.id];
-                usr.solved[ usr.lstGiven ]= true;
+                usr.solved[ usr.lstGivenId ]= true;
                 usr.state= "nameOrTag";
-                await send(problems[ usr.lstGiven ].soloution, msg.from.id);                
+                await send(usr.lstGiven.soloution, msg.from.id);                
                 await send("آورین آورین.\nمی تونی دوباره سوال انتخاب کنی!", msg.from.id);
             }
         },
@@ -317,8 +347,7 @@ const states = {
             func : async (msg)=>{
                 let usr= users[msg.from.id];
                 usr.state= "nameOrTag";
-                if(usr.solved[ usr.lstGiven ] !== true)
-                    usr.notSolved[ usr.lstGiven ]= true;
+                usr.notSolved[ usr.lstGivenId ]= true;
                 await send("باشه! این سوال به لیست سوالاتی که روشون زور زدی اضافه میشه.", msg.from.id);
             }
         }
@@ -346,7 +375,7 @@ const states = {
             func: async(msg)=>{
                 let usr= users[msg.from.id];
                 usr.state="removeName";
-                await send("اسم سوال را وارد کنید:", msg.from.id);
+                await send("آیدی سوال را وارد کنید:", msg.from.id);
             }
         },
         {            
@@ -356,7 +385,7 @@ const states = {
                 usr.state="nowAdmin";
                 let str="";
                 for(let x in users){
-                    str= str + users[x].name + "\n";
+                    str= str + users[x].name + "  @" + users[x].username + "\n";
                 }
                 await send(str, msg.from.id);
             }
@@ -369,7 +398,7 @@ const states = {
                 let str="";
                 for(let x in users){
                     if(users[x].isAdmin)
-                        str= str + users[x].name + "\n";
+                        str= str + users[x].name + "  @" + users[x].username + "\n";
                 }
                 await send(str, msg.from.id);
             }
@@ -385,32 +414,59 @@ const states = {
         {
             key : (s)=> s==="تایید سوال",
             func : async (msg)=>{
-                let usr= users[msg.from.id];
-                for(let x in newProblems){
-                    if(newProblems[x] !== undefined){
-                        usr.lstGiven= x;
-                        let str="اسم سوال : " + x + "\n";
-                        str= str + "سختی سوال : " + newProblems[x].dif + "\n";
-                        str= str + "تگ های سوال : ";
-                        for(let y in newProblems[x].tag)
-                            str=str + y + " ";
-                        str=str+"\n"+"\n";
-                        str= str + "متن سوال : \n" + newProblems[x].text + "\n";
-                        str= str + "هینت سوال : \n" + newProblems[x].hint + "\n";
-                        str= str + "جواب سوال : \n" + newProblems[x].soloution + "\n";
-                        await send(str, msg.from.id);
-                        usr.state="confirmProblem";
-                        await send("آیا این سوال را تایید می کنید؟!", msg.from.id);
-                        return;
-                    }
+                let usr= users[msg.from.id];                
+                if(anyNew()){
+                    usr.lstGiven= giveNewProblem();
+                    let str="اسم سوال : " + usr.lstGiven.name + "\n";
+                    str= str + "نویسنده سوال : " + users[ usr.lstGiven.adder ].name + " @" + users[ usr.lstGiven.adder ].username + "\n";
+                    str= str + "سختی سوال : " + usr.lstGiven.dif + "\n";
+                    str= str + "تگ های سوال : ";
+                    for(let y in usr.lstGiven.tag)
+                        str=str + y + " ";
+                    str=str+"\n"+"\n";
+                    str= str + "متن سوال : \n" + usr.lstGiven.text + "\n";
+                    str= str + "هینت سوال : \n" + usr.lstGiven.hint + "\n";
+                    str= str + "جواب سوال : \n" + usr.lstGiven.soloution + "\n";
+                    await send(str, msg.from.id);
+                    usr.state="confirmProblem";
+                    await send("آیا این سوال را تایید می کنید؟!", msg.from.id);
                 }
-                await send("سوالی برای تایید وجود ندارد.", msg.from.id);
+                else{
+                    await send("سوالی برای تایید وجود ندارد.", msg.from.id);    
+                }                
             }
         },
+     /*   {            
+            key : (s)=> s==="ادیت سوال",
+            func: async(msg)=>{
+                let usr= users[msg.from.id];
+                usr.state="startEdit";
+                await send("آیدی سوال را وارد کنید:", msg.from.id);
+            }
+        },*/
         {
             key : (s)=> s==="ذخیره کردن اطلاعات",
             func : async (msg)=>{
                 save();
+                save2();
+                await send("انجام شد!", msg.from.id);
+            }
+        },
+        {
+            key : (s)=> s==="حذف ادمین",
+            func : async (msg)=>{
+                let usr=users[msg.from.id];
+                usr.state="removeAdmin";
+                await send("یوزر نیم ادمین مورد نظر را بدون @ وارد کنید : ", msg.from.id);
+            }
+        },
+        {
+            key : (s)=> s==="ذخیره سازی و ارسال اطلاعات",
+            func : async (msg)=>{
+                let usr=users[msg.from.id];
+                save();
+                save2();
+                await sendBackup(msg.from.id);
                 await send("انجام شد!", msg.from.id);
             }
         }
@@ -422,10 +478,8 @@ const states = {
             func : async (msg)=>{
                 let usr= users[msg.from.id];
                 usr.state="nowAdmin";
-                problems[usr.lstGiven]= newProblems[usr.lstGiven];
-                newProblems[usr.lstGiven]= undefined;
-                update_tags();
-                await send("تایید شد.", msg.from.id);
+                let id=addProblem(usr.lstGiven);
+                await send(`تایید شد.\nآیدی سوال : ${id}`, msg.from.id);
             }
         },
         {
@@ -433,7 +487,6 @@ const states = {
             func : async (msg)=>{
                 let usr= users[msg.from.id];
                 usr.state="nowAdmin";
-                newProblems[usr.lstGiven]= undefined;
                 await send("رد شد.", msg.from.id);
             }
         }
@@ -460,23 +513,14 @@ const states = {
             func: async(msg)=>{
                 let usr= users[msg.from.id];
                 let txt= msg.text;
-                if(problems[txt] === undefined && newProblems[txt] === undefined){
-                    usr.lstGiven= txt;
-                    newProblems[txt]= newProblem();
-                    usr.state="addTag";
-                    await send("تگ های سوال را انتخاب کنید. تگ ها باید در یک خط و پشت سر هم باشند و با - جدا شوند. در صورتیکه تنها یک تگ دارید از - استفاده نکنید.\nمثال:\nاستقرا-اکسترمال-دوگونه شماری", msg.from.id);
-                    let str="لیست تگ های موجود:\n";
-                    for(let x in tags){
-                        if(tags[x] === undefined) continue;                    
-                        str=str + `${x}\n`;
-                    }
-                    str=str + "\n" + "البته اگر از تگ جدیدی استفاده کنید در لیست اضافه خواهد شد.\n";
-                    await send(str, msg.from.id);
-                }
-                else{
-                    usr.state="addName";
-                    await send("اسم قبلا استفاده شده است. دوباره انتخاب کنید.", msg.from.id);
-                }
+                usr.lstGiven.name= txt;
+                usr.state="addTag";
+                await send("تگ های سوال را انتخاب کنید. تگ ها باید در یک خط و پشت سر هم باشند و با - جدا شوند. در صورتیکه تنها یک تگ دارید از - استفاده نکنید.\nمثال:\nاستقرا-اکسترمال-دوگونه شماری", msg.from.id);
+                let str="لیست تگ های موجود:\n";
+                for(let x in listOfTags())
+                    str=str + `${x}\n`;
+                str=str + "\n\n" + "البته اگر از تگ جدیدی استفاده کنید در لیست اضافه خواهد شد.\n";
+                await send(str, msg.from.id);
             }
         }
     ],
@@ -488,12 +532,11 @@ const states = {
                 let usr= users[msg.from.id];
                 let txt= msg.text;
                 usr.state="addDif";
+                usr.lstGiven.tag={};
                 let s=txt.split('-');
                 for(let i in s){
                     s[i]= normalStr(s[i]);
-                }
-                for(let tg of s){
-                    newProblems[usr.lstGiven].tag[tg]= true;
+                    usr.lstGiven.tag[s[i]]=true;
                 }
                 await send("سختی سوال را انتخاب کنید.",  msg.from.id);                
             }
@@ -505,44 +548,52 @@ const states = {
             key : (s)=> (s === "آسون" || s === "متوسط" || s === "سخت"),
             func: async(msg)=>{
                 let usr= users[msg.from.id];
-                newProblems[usr.lstGiven].dif= msg.text;
-                usr.state="addSSH";
-                await send("حالا صورت سوال سپس هینت سوال سپس حل سوال را بنویسید که با $ از هم جدا شده اند.همچنین در متن صورت سوال یا حل سوال یا هینت سوال نباید از $ استفاده کنید.\nمثال:\n2+2=?\n$\nبه شدت بدیهی هست فکر کن!\n$\n4", msg.from.id);
+                usr.lstGiven.dif= msg.text;
+                usr.state="addStatement";
+                await send("صورت سوال را وارد کنید:", msg.from.id);
             }
         }
     ],
-    addSSH:[// statement // soloution // hint
+    addStatement:[
         restart,
         {
-            key : (s)=>{
-                let pos1=-1, pos2=-1, pos3=-1;
-                for(let i=0;i<s.length;i++){
-                    if(s[i] !== '$') continue;
-                    if(pos1 === -1) pos1=i;
-                    else if(pos2 === -1) pos2=i;
-                    else pos3=i;
-                }
-                return ( pos1!=-1 && pos2!=-1 && pos3==-1 && pos1!=0 && pos1+1!=pos2 && pos2+1!=s.length );
-            },
+            key : (s)=> true,
             func: async(msg)=>{
                 let usr= users[msg.from.id];
-                let txt= msg.text;
-                let s=txt.split('$');
-                newProblems[usr.lstGiven].text=s[0];
-                newProblems[usr.lstGiven].hint=s[1];
-                newProblems[usr.lstGiven].soloution=s[2];
+                usr.lstGiven.text= msg.text;
+                usr.state="addHint";
+                await send("هینت سوال را وارد کنید:", msg.from.id);
+            }
+        }
+    ],
+    addHint:[
+        restart,
+        {
+            key : (s)=> true,
+            func: async(msg)=>{
+                let usr= users[msg.from.id];
+                usr.lstGiven.hint= msg.text;
+                usr.state="addSoloution";
+                await send("حل سوال را وارد کنید:", msg.from.id);
+            }
+        }
+    ],
+    addSoloution:[
+        restart,
+        {
+            key : (s)=> true,
+            func: async(msg)=>{
+                let usr= users[msg.from.id];
+                usr.lstGiven.soloution= msg.text;
+                usr.lstGiven.adder=msg.from.id;
                 if(usr.isAdmin){
-                    problems[usr.lstGiven]= newProblems[usr.lstGiven];
-                    newProblems[usr.lstGiven]= undefined;
-                    update_tags();
+                    let id=addProblem(usr.lstGiven);
                     usr.state="nowAdmin";
-                    await send("سوال با موفقیت اضافه شد.", msg.from.id);
+                    await send(`سوال با موفقیت اضافه شد.\nآیدی سوال : ${id}\n`, msg.from.id);
                 }
                 else{
-                    for(let x in users){
-                        if(users[x].isAdmin)
-                            await send("سوال جدید برای تایید!", x);
-                    }
+                    addNewProblem(usr.lstGiven);        
+                    sendToAdmins("سوال جدید برای تایید!");
                     usr.state="start";
                     await send("سوال شما بعد از تایید ادمین ها اضافه خواهد شد!", msg.from.id);
                 }
@@ -552,18 +603,75 @@ const states = {
     removeName:[
         restart,
         {
-            key : (s)=> problems[s] !==undefined,
+            key : (s)=> giveProblem(s) !== undefined,
             func: async(msg)=>{
                 let usr= users[msg.from.id];
                 usr.state="nowAdmin";
-                let txt= msg.text;
-                problems[txt]= undefined;
-                update_tags();
+                eraseProblem(msg.text);
                 await send("سوال حذف شد.", msg.from.id);
             }
         }
-    ]
+    ],
+    removeAdmin:[
+        restart,
+        {
+            key : (s)=> {
+                for(let x in users){
+                    if(users[x].isAdmin && users[x].username === s)
+                        return true;
+                }
+                return false;
+            },
+            func: async(msg)=>{
+                let usr= users[msg.from.id];
+                usr.state="nowAdmin";
+                for(let x in users){
+                    if(users[x].isAdmin && users[x].username === msg.text){
+                        users[x].isAdmin=false;
+                        await send(`بدینویسله ${users[x].name} با یوزرنیم ${users[x].username} از ادمینی برکنار می شود!`, msg.from.id);
+                        return;
+                    }
+                }                
+            }
+        }
+    ],
+    /*
+    startEdit:[
+        restart,
+        {
+            key : (s)=> giveProblem(s) !== undefined,
+            func : async(msg)=>{
+                let usr= users[msg.from.id];
+                usr.lstGivenId = msg.text;
+                usr.lstGiven = giveProblem(msg.text);
+                usr.state="chooseEdit";
+                await send("چه قسمتی از سوال نیاز به ادیت داره؟", msg.from.id);
+            }
+        }
+    ],
+    chooseEdit:[
+        restart,
+        {
+            key : (s)=> s==="نام سوال"
+            func : async(msg)=>{
+
+            }
+        },
+        {
+            key : (s)=> s===""
+            func : async(msg)=>{
+
+            }
+        }
+    ] */  
 };
+
+export async function sendToAdmins(str){
+    for(let x in users){
+        if(users[x].isAdmin)
+            await send(str, x);
+    }
+}
 
 export async function handleMessage(msg){
     let usr= users[ msg.from.id ];
@@ -584,5 +692,5 @@ export async function alertToAdmins(e){
     }
 }
 
-setInterval(save, 10 * 60 * 1000);//// baadan beshe har 1 daghighe
 load();
+setInterval(save, 10 * 60 * 1000);

@@ -1,5 +1,5 @@
 import { getUpdates } from "./api.mjs"
-import { handleMessage, alertToAdmins } from "./logic.mjs"
+import { handleMessage, sendToAdmins } from "./logic.mjs"
 
 async function search(){    
     let res= await getUpdates();
@@ -14,7 +14,8 @@ async function main(){
             await search();
         }
         catch(e){
-            alertToAdmins(e);
+            console.log(e);
+            sendToAdmins(e);///// ba tavajoh be inke string nist chi mishe?
         }
     }
 }
