@@ -30,3 +30,6 @@ let dat2=fs.readFileSync("./initUsers.json","utf-8");
 
 fs.writeFileSync(`${dir1}/${now1}.json`,dat1);
 fs.writeFileSync(`${dir2}/${now2}.json`,dat2);
+
+var config={ token : process.argv[2], adminPassword : process.argv[3] };
+fs.writeFileSync("./config.json", JSON.stringify( config ));

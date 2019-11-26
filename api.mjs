@@ -1,7 +1,8 @@
-import { config } from "./config.mjs"
 import fetch from "node-fetch"
 import telegram from "telegram-bot-api"
 import fs from "fs"
+
+var config= JSON.parse( fs.readFileSync("./config.json", "utf-8") );
 
 var tele = new telegram({token : config.token});
 

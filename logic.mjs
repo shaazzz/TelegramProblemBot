@@ -1,8 +1,9 @@
 import fs from "fs"
 import { sendMessage , sendBackup } from "./api.mjs"
 import { keyboards } from "./keyboards.mjs"
-import { config } from "./config.mjs"
 import { listOfTags, listOfProblems, giveProblem, anyNew, giveNewProblem, eraseProblem, addProblem, addNewProblem, save as save2, printListP, printProblem} from "./dataHandle.mjs"
+
+var config= JSON.parse( fs.readFileSync("./config.json", "utf-8") );
 
 var users= {};
 
