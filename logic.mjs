@@ -85,7 +85,7 @@ const states = {
             key : (s)=>true,
             func: async (msg)=>{
                 let usr= users[msg.from.id];
-                usr.stat= "tellName"
+                usr.state= "tellName"
                 await send(`سلام!\nبه ربات تلگرام شااززز خوش آمدید. لطفا نام و نام خانوادگی خود را وارد کنید : `, msg.from.id);                
             }
         }
