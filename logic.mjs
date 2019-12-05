@@ -97,7 +97,7 @@ const states = {
                 let usr= users[msg.from.id];
                 let s=msg.text;
                 if(realName(s) === false){
-                    await send('نام و نام خانوادگی خود را وارد کنید!');       
+                    await send('نام و نام خانوادگی خود را وارد کنید!', msg.from.id);       
                     return;
                 }
                 usr.name = msg.text;
@@ -216,7 +216,7 @@ const states = {
                         rank++;
                 }
                 await send(str, msg.from.id);
-                await send(`شما تا حالا ${usr.score} تا سوال اضافه کرده اید و نفر ${rank} ام هستید!`);
+                await send(`شما تا حالا ${usr.score} تا سوال اضافه کرده اید و نفر ${rank} ام هستید!`, msg.from.id);
             }
         }        
     ],
