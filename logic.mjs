@@ -32,7 +32,8 @@ function newUser(name,username){
         solved: {},
         notSolved : {},
         lstGiven : {},
-        lstGivenId : undefined
+        lstGivenId : undefined,
+        score : 0
     };
     return ans;
 }
@@ -70,6 +71,13 @@ function tryP(usr){
 function totP(usr){
     return (x)=> true;
 }
+function realName(s){
+    s=normalStr(s);
+    let cnt=0;
+    for(let x of s)
+        cnt+= x === ' ';
+    return cnt>0;
+}
 
 const states = {
     preStart:[
@@ -77,6 +85,22 @@ const states = {
             key : (s)=>true,
             func: async (msg)=>{
                 let usr= users[msg.from.id];
+                usr.stat= "tellName"
+                await send(`سلام!\nبه ربات تلگرام شااززز خوش آمدید. لطفا نام و نام خانوادگی خود را وارد کنید : `, msg.from.id);                
+            }
+        }
+    ],
+    tellName:[
+        {
+            key : (s)=>true,
+            func: async (msg)=>{
+                let usr= users[msg.from.id];
+                let s=msg.text;
+                if(realName(s) === false){
+                    await send('نام و نام خانوادگی خود را وارد کنید!');       
+                    return;
+                }
+                usr.name = msg.text;
                 usr.state= "start";
                 let tip1="هر وقت بنویسید 'برگرد اول کار' بر می گرده به اینجا!";
                 let tip2="برای حل کردن سوال 'سوال بده' و برای اضافه کردن سوال به آرشیو ما از 'سوال بگیر' استفاده کنید.";
@@ -84,16 +108,17 @@ const states = {
                 let tip4="اگر می خواهید سوال حل کنید و تگ خاصی مد نظرتان نیست می توانید به جای تگ سوال 'هر تگی' را بنویسید.";
                 let tip5="وقتی با تگ و سختی سوال انتخاب می کنید سوال تکراری به شما داده نخواهد شد. در کل سوال غیرتکراری یا سوال جدید یعنی سوالی که در آن گزینه 'حلش کردم' یا 'حلش رو بگو' یا 'بیخیال بعدا حلش میکنم' انتخاب نشده باشد."
                 let tip6="سوالاتی که در آن 'بیخیال بعدا حلش میکنم' را انتخاب کردید در قسمت 'لیست سوالاتی که زور زدم روشون' قابل دسترسی است!";
-                await send(`سلام ${usr.name}\nبه ربات سوالات شااززز خوش آمدید!`, msg.from.id);
+                let tip7="به کسی که بیشترین تعداد سوال را اضافه کند پیتزا تعلق می گیرد! می توانید از قسمت رنکینگ تعداد سوالات اضافه شده و رتبه خود و ۱۰ نفر برتر را ببینید.";
                 await send(tip1, msg.from.id);
                 await send(tip2, msg.from.id);
                 await send(tip3, msg.from.id);
                 await send(tip4, msg.from.id);
                 await send(tip5, msg.from.id);
-                await send(tip6, msg.from.id);                
+                await send(tip6, msg.from.id);               
+                await send(tip7, msg.from.id); 
             }
         }
-    ],
+    ],    
     start:[
         {
             key : (s)=> s==="سوال بده",
@@ -164,6 +189,34 @@ const states = {
                 let usr= users[msg.from.id];
                 usr.state="nameOrTag";
                 await send( printListP( listOfProblems( undefined, undefined, tryP(usr) ) ), msg.from.id );
+            }
+        },
+        {
+            key : (s)=> s==="رنکینگ",
+            func: async (msg)=>{
+                let usr= users[msg.from.id];
+                let str = "";
+                let champion={};
+                for(let i=0;i<10;i++){
+                    let bst=-1;
+                    for(let x in users){
+                        if(champion[x] !== undefined)
+                            continue;
+                        if((bst === -1) || users[x].score > users[bst].score)
+                            bst=x;
+                    }
+                    if(bst === -1)
+                        break;
+                    str+=`${users[bst].name} : ${users[bst].score} \n`;
+                    champion[bst] = true;
+                }
+                let rank=1;
+                for(let x in users){
+                    if(users[x].score > usr.score)
+                        rank++;
+                }
+                await send(str, msg.from.id);
+                await send(`شما تا حالا ${usr.score} تا سوال اضافه کرده اید و نفر ${rank} ام هستید!`);
             }
         }        
     ],
