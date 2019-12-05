@@ -533,6 +533,7 @@ const states = {
                 let usr= users[msg.from.id];
                 usr.state="nowAdmin";
                 let id=addProblem(usr.lstGiven);
+                users[ lstGiven.adder ].score++;
                 await send(`تایید شد.\nآیدی سوال : ${id}`, msg.from.id);
             }
         },
@@ -643,6 +644,7 @@ const states = {
                 if(usr.isAdmin){
                     let id=addProblem(usr.lstGiven);
                     usr.state="nowAdmin";
+                    usr.score++;
                     await send(`سوال با موفقیت اضافه شد.\nآیدی سوال : ${id}\n`, msg.from.id);
                 }
                 else{
