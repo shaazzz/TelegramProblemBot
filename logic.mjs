@@ -546,7 +546,7 @@ const states = {
                 usr.state="nowAdmin";
                 let id=addProblem(usr.lstGiven);
                 users[ usr.lstGiven.adder ].score++;
-                await alertToAdmins(`${usr.name} سوالی را تایید کرد!`);
+                await sendToAdmins(`${usr.name} سوالی را تایید کرد!`);
                 await send(`تایید شد.\nآیدی سوال : ${id}`, msg.from.id);
             }
         },
@@ -555,7 +555,7 @@ const states = {
             func : async (msg)=>{
                 let usr= users[msg.from.id];
                 usr.state="nowAdmin";
-                await alertToAdmins(`${usr.name} سوالی را رد کرد!`);
+                await sendToAdmins(`${usr.name} سوالی را رد کرد!`);
                 await send("رد شد.", msg.from.id);
             }
         }
@@ -754,12 +754,6 @@ export async function handleMessage(msg){
         }
     }
     await send("چی شده؟!",msg.from.id);
-}
-
-export async function alertToAdmins(e){
-    for(let usr in users){
-        await send(e,usr);
-    }
 }
 
 load();
