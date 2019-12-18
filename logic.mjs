@@ -200,6 +200,8 @@ const states = {
                 for(let i=0;i<10;i++){
                     let bst=-1;
                     for(let x in users){
+                        if(users[x].isAdmin === true)
+                            continue;
                         if(champion[x] !== undefined)
                             continue;
                         if((bst === -1) || users[x].score > users[bst].score)
@@ -212,6 +214,8 @@ const states = {
                 }
                 let rank=1;
                 for(let x in users){
+                    if(users[x].isAdmin === true)
+                        continue;
                     if(users[x].score > usr.score)
                         rank++;
                 }
@@ -542,6 +546,7 @@ const states = {
                 usr.state="nowAdmin";
                 let id=addProblem(usr.lstGiven);
                 users[ usr.lstGiven.adder ].score++;
+                await alertToAdmins(`${usr.name} سوالی را تایید کرد!`);
                 await send(`تایید شد.\nآیدی سوال : ${id}`, msg.from.id);
             }
         },
@@ -550,6 +555,7 @@ const states = {
             func : async (msg)=>{
                 let usr= users[msg.from.id];
                 usr.state="nowAdmin";
+                await alertToAdmins(`${usr.name} سوالی را رد کرد!`);
                 await send("رد شد.", msg.from.id);
             }
         }
