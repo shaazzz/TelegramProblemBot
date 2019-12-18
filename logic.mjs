@@ -437,11 +437,19 @@ const states = {
             func: async(msg)=>{
                 let usr= users[msg.from.id];
                 usr.state="nowAdmin";
-                let str="";
+                let str="", rem = 0;
                 for(let x in users){
                     str= str + users[x].name + "  @" + users[x].username + "\n";
+                    rem++;
+                    if(rem == 75){
+                        await send(str, msg.from.id);
+                        rem = 0;
+                        str = "";
+                    }
                 }
-                await send(str, msg.from.id);
+                if(rem != 0){
+                    await send(str, msg.from.id);
+                }
             }
         },
         {            
