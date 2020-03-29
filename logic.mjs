@@ -379,7 +379,7 @@ const states = {
             func: async (msg)=>{
                 let usr= users[msg.from.id];
                 usr.state= "givenProblem";
-                await send(usr.lstGiven.hint, msg.from.id);
+                await sendTextOrPhoto(usr.lstGiven.hint, msg.from.id);
             }
         },
         {
@@ -389,7 +389,7 @@ const states = {
                 usr.state= "nameOrTag";
                 usr.solved[ usr.lstGivenId ]= true;
                 await send(usr.lstGiven.soloution, msg.from.id);
-                await send("حیف شد سوزوندی این رو!حالا می تونی دوباره سوال انتخاب کنی.", msg.from.id);
+                await sendTextOrPhoto("حیف شد سوزوندی این رو!حالا می تونی دوباره سوال انتخاب کنی.", msg.from.id);
             }
         },
         {
@@ -504,17 +504,19 @@ const states = {
                 let usr= users[msg.from.id];                
                 if(anyNew()){
                     usr.lstGiven= giveNewProblem();
-                    let str="اسم سوال : " + usr.lstGiven.name + "\n";
-                    str= str + "نویسنده سوال : " + users[ usr.lstGiven.adder ].name + " @" + users[ usr.lstGiven.adder ].username + "\n";
-                    str= str + "سختی سوال : " + usr.lstGiven.dif + "\n";
-                    str= str + "تگ های سوال : ";
+                    await send("اسم سوال : " + usr.lstGiven.name, msg.from.id);
+                    await send("نویسنده سوال : " + users[ usr.lstGiven.adder ].name + " @" + users[ usr.lstGiven.adder ].username, msg.from.id);
+                    await send("سختی سوال : " + usr.lstGiven.dif, msg.from.id);
+                    let str = "تگ های سوال : ";
                     for(let y in usr.lstGiven.tag)
                         str=str + y + " ";
-                    str=str+"\n"+"\n";
-                    str= str + "متن سوال : \n" + usr.lstGiven.text + "\n";
-                    str= str + "هینت سوال : \n" + usr.lstGiven.hint + "\n";
-                    str= str + "جواب سوال : \n" + usr.lstGiven.soloution + "\n";
                     await send(str, msg.from.id);
+                    await send("متن سوال :", msg.from.id);
+                    await sendTextOrPhoto(usr.lstGiven.text, msg.from.id);
+                    await send("هینت سوال :", msg.from.id);
+                    await sendTextOrPhoto(usr.lstGiven.hint, msg.from.id);
+                    await send("جواب سوال :", msg.from.id);
+                    await sendTextOrPhoto(usr.lstGiven.soloution, msg.from.id);
                     usr.state="confirmProblem";
                     await send("آیا این سوال را تایید می کنید؟!", msg.from.id);
                 }
