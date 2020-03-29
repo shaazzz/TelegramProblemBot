@@ -58,11 +58,11 @@ async function sendProblem(prob_id, chat_id){
 async function inputTextOrPhoto(msg){
     console.log("SALAM", msg.text, msg.photo);
     if(msg.text === undefined && msg.photo === undefined)
-        return {error : true}
+        return {error : true};
     if(msg.photo !== undefined)
-        return {isText : false, text : msg.photo[0].file_id}
+        return {isText : false, text : msg.photo[0].file_id};
     else
-        return {isText : true, text : msg.text}
+        return {isText : true, text : msg.text};
 }
 
 function normalStr(s){
