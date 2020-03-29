@@ -112,9 +112,12 @@ export function eraseProblem(id){
     update_tags();
 }
 
-// {name, adder, tag, dif, text, hint, soloution}
+// {name, adder, tag, dif, text, hint, soloution, like, dislike}
+// {soloution / hint / text : {isText, text}}
 
 export function addProblem(p){
+    p.like = 0;
+    p.dislike = 0;
     let id=chooseId();
     problems[id]=Deep(p);
     update_tags();
@@ -131,10 +134,6 @@ export function printListP(arr){
     if(str === "")
         str="لیست خالی است!";
     return str;           
-}
-
-export function printProblem(p){
-    return `آیدی سوال : ${p} \n اسم سوال : ${problems[p].name} \n ${problems[p].text}`;
 }
 
 load();

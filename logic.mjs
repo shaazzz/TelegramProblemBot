@@ -1,7 +1,7 @@
 import fs from "fs"
-import { sendMessage , sendBackup } from "./api.mjs"
+import { sendMessage , sendBackup, sendPhoto} from "./api.mjs"
 import { keyboards } from "./keyboards.mjs"
-import { listOfTags, listOfProblems, giveProblem, anyNew, giveNewProblem, eraseProblem, addProblem, addNewProblem, save as save2, printListP, printProblem} from "./dataHandle.mjs"
+import { listOfTags, listOfProblems, giveProblem, anyNew, giveNewProblem, eraseProblem, addProblem, addNewProblem, save as save2, printListP} from "./dataHandle.mjs"
 
 var config= JSON.parse( fs.readFileSync("./config.json", "utf-8") );
 
@@ -42,6 +42,27 @@ var send= async (text, id)=>{
     text+="\n";
     await sendMessage(text, id, keyboards[users[id].state]); 
 };
+
+async function sendTextOrPhoto(obj, chat_id){
+    if(obj.isText === true)
+        await send(obj.text, chat_id);
+    else
+        await sendPhoto(obj.text, chat_id);
+}
+async function sendProblem(prob_id, chat_id){
+    await send(`آیدی سوال : ${prob_id}`, chat_id);
+    let p = giveProblem(prob_id);
+    await send(`اسم سوال : ${p.name}`, chat_id);
+    await sendTextOrPhoto(p.text, chat_id);
+}
+export async function inputTextOrPhoto(msg){
+    if(msg.text === undefined && msg.photo === undefined)
+        return {error : true}
+    if(msg.photo !== undefined)
+        return {isText : false, text : msg.photo[0].file_id}
+    else
+        return {isText : true, text : msg.text}
+}
 
 function normalStr(s){
     var st=0, en=s.length-1;
@@ -239,7 +260,7 @@ const states = {
                     let p=giveProblem(txt);
                     usr.lstGivenId=txt;
                     usr.lstGiven=p;
-                    await send( printProblem(txt), msg.from.id);
+                    await sendProblem(txt, msg.from.id);
                 }
             }
         }
@@ -323,7 +344,7 @@ const states = {
                 usr.state="givenProblem";         
                 usr.lstGiven = giveProblem(p);
                 usr.lstGivenId = p;
-                await send( printProblem(p), msg.from.id);                 
+                await sendProblem(p, msg.from.id);
             }
         },
         {
@@ -642,7 +663,12 @@ const states = {
             key : (s)=> true,
             func: async(msg)=>{
                 let usr= users[msg.from.id];
-                usr.lstGiven.text= msg.text;
+                let p = inputTextOrPhoto(msg);
+                if(p.error === true){
+                    await send("فرمت باید یا عکس(نه فایل) باشد یا متن! لطفا دوباره تلاش کنید!", msg.from.id);
+                    return;
+                }
+                usr.lstGiven.text= p;
                 usr.state="addHint";
                 await send("هینت سوال را وارد کنید:", msg.from.id);
             }
@@ -654,7 +680,12 @@ const states = {
             key : (s)=> true,
             func: async(msg)=>{
                 let usr= users[msg.from.id];
-                usr.lstGiven.hint= msg.text;
+                let p = inputTextOrPhoto(msg);
+                if(p.error === true){
+                    await send("فرمت باید یا عکس(نه فایل) باشد یا متن! لطفا دوباره تلاش کنید!", msg.from.id);
+                    return;
+                }
+                usr.lstGiven.hint= p;
                 usr.state="addSoloution";
                 await send("حل سوال را وارد کنید:", msg.from.id);
             }
@@ -666,7 +697,12 @@ const states = {
             key : (s)=> true,
             func: async(msg)=>{
                 let usr= users[msg.from.id];
-                usr.lstGiven.soloution= msg.text;
+                let p = inputTextOrPhoto(msg);
+                if(p.error === true){
+                    await send("فرمت باید یا عکس(نه فایل) باشد یا متن! لطفا دوباره تلاش کنید!", msg.from.id);
+                    return;
+                }
+                usr.lstGiven.soloution= p;
                 usr.lstGiven.adder=msg.from.id;
                 if(usr.isAdmin){
                     let id=addProblem(usr.lstGiven);

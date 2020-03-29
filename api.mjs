@@ -19,6 +19,17 @@ export async function sendMessage(text, chat_id, reply_markup){
         body : JSON.stringify( { chat_id, text ,reply_markup} )
     });
 }
+export async function sendPhoto(link, chat_id, reply_markup){
+    if(reply_markup === undefined)
+        reply_markup={remove_keyboard:true};
+    else
+        reply_markup={keyboard:reply_markup};
+    await fetch( `${url}sendPhoto`, {
+        method : "POST",
+       headers : { 'Content-Type': 'application/json' },
+       body : JSON.stringify( { chat_id, photo : link ,reply_markup } )
+    });  
+}
 
 let lastOffset=0;
 export function getUpdates(){
