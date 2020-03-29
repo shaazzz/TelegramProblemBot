@@ -55,7 +55,8 @@ async function sendProblem(prob_id, chat_id){
     await send(`اسم سوال : ${p.name}`, chat_id);
     await sendTextOrPhoto(p.text, chat_id);
 }
-export async function inputTextOrPhoto(msg){
+async function inputTextOrPhoto(msg){
+    console.log("SALAM", msg.text, msg.photo);
     if(msg.text === undefined && msg.photo === undefined)
         return {error : true}
     if(msg.photo !== undefined)
@@ -666,7 +667,7 @@ const states = {
             func: async(msg)=>{
                 let usr= users[msg.from.id];
                 let p = inputTextOrPhoto(msg);
-                sendTextOrPhoto(p);
+                sendTextOrPhoto(p);/////////
                 if(p.error === true){
                     await send("فرمت باید یا عکس(نه فایل) باشد یا متن! لطفا دوباره تلاش کنید!", msg.from.id);
                     return;
