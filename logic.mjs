@@ -666,6 +666,7 @@ const states = {
             func: async(msg)=>{
                 let usr= users[msg.from.id];
                 let p = inputTextOrPhoto(msg);
+                sendTextOrPhoto(p);
                 if(p.error === true){
                     await send("فرمت باید یا عکس(نه فایل) باشد یا متن! لطفا دوباره تلاش کنید!", msg.from.id);
                     return;
