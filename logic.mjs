@@ -54,7 +54,7 @@ const restart={
     key : (s)=> s === "برگرد اول کار",
     func: async (msg)=>{
         let usr= users[msg.from.id];
-        if(usr.state === "confirmProblem"){
+        if(usr.state === "confirmProblem" || usr.state === "reasonForRej"){
             addNewProblem(usr.lstGiven);
         }
         usr.state="start";
@@ -548,17 +548,30 @@ const states = {
                 users[ usr.lstGiven.adder ].score++;
                 await sendToAdmins(`${usr.name} سوالی را تایید کرد!`);
                 await send(`تایید شد.\nآیدی سوال : ${id}`, msg.from.id);
+		await send(`سوال شما تایید شد. آیدی سوال : ${id}`, usr.lstGiven.adder);
             }
         },
         {
             key : (s)=> s==="خیر",
-            func : async (msg)=>{
+            func : async (msg)=>{/////////////////
                 let usr= users[msg.from.id];
-                usr.state="nowAdmin";
-                await sendToAdmins(`${usr.name} سوالی را رد کرد!`);
-                await send("رد شد.", msg.from.id);
+                usr.state="reasonForRej";
+                await send("دلایل رد کردن سوال را همراه با لیستی از ایرادات بنویسید.", msg.from.id);
             }
         }
+    ],
+    reasonForRej:[
+         restart,
+         {
+            key : (s)=>true,
+            func : async (msg)=>{
+	        let usr= users[msg.from.id];
+                usr.state="nowAdmin";
+                await sendToAdmins(`${usr.name} سوالی را رد کرد!`);
+                await send(".رد شد", msg.from.id);
+                await send(`سوال شما به دلایل زیر رد شد. در صورت امکان اشکالات را اصلاح نموده و دوباره سوال را اضافه کنید.\n\n${msg.text}`, usr.lstGiven.adder);
+            }
+         }
     ],
     sendToAll:[
         restart,

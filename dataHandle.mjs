@@ -67,7 +67,7 @@ function Deep(x){ ///////// in arraye ro tabil mikone be object. chekar konim?
     return ans;
 }
 
-export function listOfTags(){
+export function listOfTags(){ // nabayad deep bashe?
     return tags;
 }
 export function listOfProblems(tag,dif,checker){
