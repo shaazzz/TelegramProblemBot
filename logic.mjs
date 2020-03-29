@@ -55,7 +55,7 @@ async function sendProblem(prob_id, chat_id){
     await send(`اسم سوال : ${p.name}`, chat_id);
     await sendTextOrPhoto(p.text, chat_id);
 }
-async function inputTextOrPhoto(msg){
+function inputTextOrPhoto(msg){
     if(msg.text === undefined && msg.photo === undefined)
         return {error : true};
     if(msg.photo !== undefined)
@@ -667,7 +667,7 @@ const states = {
                 let usr= users[msg.from.id];
                 let p = inputTextOrPhoto(msg);
                 console.log("SALAM", p);
-                sendTextOrPhoto(p);/////////
+                await sendTextOrPhoto(p); /////////
                 if(p.error === true){
                     await send("فرمت باید یا عکس(نه فایل) باشد یا متن! لطفا دوباره تلاش کنید!", msg.from.id);
                     return;
@@ -716,7 +716,7 @@ const states = {
                 }
                 else{
                     addNewProblem(usr.lstGiven);        
-                    sendToAdmins("سوال جدید برای تایید!");
+                    await sendToAdmins("سوال جدید برای تایید!");
                     usr.state="start";
                     await send("سوال شما بعد از تایید ادمین ها اضافه خواهد شد!", msg.from.id);
                 }
