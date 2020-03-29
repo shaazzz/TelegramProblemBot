@@ -47,7 +47,7 @@ async function sendTextOrPhoto(obj, chat_id){
     if(obj.isText === true)
         await send(obj.text, chat_id);
     else
-        await sendPhoto(obj.text, chat_id);
+        await sendPhoto(obj.text, chat_id, keyboards[users[chat_id].state]);
 }
 async function sendProblem(prob_id, chat_id){
     await send(`آیدی سوال : ${prob_id}`, chat_id);
@@ -388,8 +388,8 @@ const states = {
                 let usr= users[msg.from.id];
                 usr.state= "nameOrTag";
                 usr.solved[ usr.lstGivenId ]= true;
-                await send(usr.lstGiven.soloution, msg.from.id);
-                await sendTextOrPhoto("حیف شد سوزوندی این رو!حالا می تونی دوباره سوال انتخاب کنی.", msg.from.id);
+                await sendTextOrPhoto(usr.lstGiven.soloution, msg.from.id);
+                await send("حیف شد سوزوندی این رو!حالا می تونی دوباره سوال انتخاب کنی.", msg.from.id);
             }
         },
         {
@@ -417,7 +417,7 @@ const states = {
                 let usr= users[msg.from.id];
                 usr.solved[ usr.lstGivenId ]= true;
                 usr.state= "nameOrTag";
-                await send(usr.lstGiven.soloution, msg.from.id);                
+                await sendTextOrPhoto(usr.lstGiven.soloution, msg.from.id);                
                 await send("آورین آورین.\nمی تونی دوباره سوال انتخاب کنی!", msg.from.id);
             }
         },
@@ -666,8 +666,6 @@ const states = {
             func: async(msg)=>{
                 let usr= users[msg.from.id];
                 let p = inputTextOrPhoto(msg);
-                console.log("SALAM", p);
-                await sendTextOrPhoto(p); /////////
                 if(p.error === true){
                     await send("فرمت باید یا عکس(نه فایل) باشد یا متن! لطفا دوباره تلاش کنید!", msg.from.id);
                     return;
