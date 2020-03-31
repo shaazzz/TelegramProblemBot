@@ -137,7 +137,7 @@ export function printListP(arr){
 }
 
 export function isEmoji(emoji){
-    bool is = false;
+    let is = false;
     for(let e of emojiArr){
         if(e === emoji)
             is = true;
