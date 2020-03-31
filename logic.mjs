@@ -1,7 +1,7 @@
 import fs from "fs"
 import { sendMessage , sendBackup, sendPhoto} from "./api.mjs"
 import { keyboards } from "./keyboards.mjs"
-import { listOfTags, listOfProblems, giveProblem, anyNew, giveNewProblem, eraseProblem, addProblem, addNewProblem, save as save2, printListP} from "./dataHandle.mjs"
+import { listOfTags, listOfProblems, giveProblem, anyNew, giveNewProblem, eraseProblem, addProblem, addNewProblem, save as save2, printListP, isEmoji, addEmoji, askEmoji} from "./dataHandle.mjs"
 
 var config= JSON.parse( fs.readFileSync("./config.json", "utf-8") );
 
@@ -428,6 +428,20 @@ const states = {
                 usr.state= "nameOrTag";
                 usr.notSolved[ usr.lstGivenId ]= true;
                 await send("باشه! این سوال به لیست سوالاتی که روشون زور زدی اضافه میشه.", msg.from.id);
+            }
+        },
+        {
+            key : isEmoji,
+            func : async (msg)=>{
+                let usr= users[msg.from.id];
+                await send(addEmoji(usr.lstGivenId, msg.from.id, msg.text), msg.from.id);
+            }
+        },
+        {
+            key : (s)=> s === "وضعیت لایک های سوال",
+            func : async (msg)=>{
+                let usr = users[msg.from.id];
+                await send(askEmoji(usr.lstGivenId), msg.from.id);
             }
         }
     ],

@@ -32,7 +32,7 @@ function update_tags(){
         }
     }
 }
-function update_problems(){// momkene be khatere refrence o ina in copy nakone vaghean?
+function update_problems(){
     let nw={}, n=0;
     for(let x in problems){
         if(problems[x] !== undefined)
@@ -112,12 +112,12 @@ export function eraseProblem(id){
     update_tags();
 }
 
-// {name, adder, tag, dif, text, hint, soloution, like, dislike}
+// {name, adder, tag, dif, text, hint, soloution, emoji}
 // {soloution / hint / text : {isText, text}}
 
+export const emojiArr = []; ////////
+
 export function addProblem(p){
-    p.like = 0;
-    p.dislike = 0;
     let id=chooseId();
     problems[id]=Deep(p);
     update_tags();
@@ -134,6 +134,59 @@ export function printListP(arr){
     if(str === "")
         str="لیست خالی است!";
     return str;           
+}
+
+export function isEmoji(emoji){
+    bool is = false;
+    for(let e of emojiArr){
+        if(e === emoji)
+            is = true;
+    }
+    return is;    
+}
+export function addEmoji(problemId, userId, emoji){
+    if(problems[problemId].emoji === undefined){
+        problems[problemId].emoji = {};
+    }
+    let obj = problems[problemId].emoji;
+    if(obj[emoji] === undefined){
+        obj[emoji] = {};
+    }
+    if(obj[emoji][userId] === true){
+        obj[emoji][userId] = false;
+    }
+    else{
+        obj[emoji][userId] = true;
+    }
+
+    if(obj["LIKE"][userId] === true && obj["DISLIKE"][userId] === true){
+        if(emoji === "LIKE")
+            obj["DISLIKE"][userId] = false;
+        if(emoji === "DISLIKE")
+            obj["LIKE"][userId] = false;
+    }
+    return "انجام شد."
+}
+function Count(obj){
+    let ans = 0;
+    for(let x in obj){
+        if(obj[x] === true)
+            ans++;
+    }
+    return ans;
+}
+export function askEmoji(problemId){
+    if(problems[problemId].emoji === undefined){
+        problems[problemId].emoji = {};
+    }
+    let obj = problems[problemId].emoji;
+    let ans = "";
+    for(let emoji of emojiArr){
+        if(obj[emoji] === undefined)
+            obj[emoji] = {};
+        ans+= `${emoji} : ${Count(obj[emoji])} \n`;
+    }
+    return ans;
 }
 
 load();

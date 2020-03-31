@@ -33,7 +33,7 @@ export async function sendPhoto(link, chat_id, reply_markup){
 
 let lastOffset=0;
 export function getUpdates(){
-/*    return fetch(`${url}getUpdates`,{
+    return fetch(`${url}getUpdates`,{
         headers : { "Content-Type" : "application/json" },
         method : "POST",
         body : JSON.stringify( { offset : lastOffset+1 } )
@@ -44,12 +44,12 @@ export function getUpdates(){
         if(res.length > 0)
             lastOffset= res[ res.length -1 ].update_id;
         return res;
-    });  */
-    return tele.getUpdates( { offset : lastOffset+1 } ).then(res=>{
+    });
+/*    return tele.getUpdates( { offset : lastOffset+1 } ).then(res=>{
         if(res.length > 0)
             lastOffset= res[ res.length -1 ].update_id;
         return res;        
-    });
+    });*/
 }
 
 export async function sendBackup(chat_id){
