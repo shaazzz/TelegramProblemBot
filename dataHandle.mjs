@@ -144,14 +144,17 @@ export function isEmoji(emoji){
     }
     return is;    
 }
+function build(problemId){
+    problems[problemId].emoji = {};
+    for(let x of emojiArr)
+        problems[problemId].emoji[x] = {};
+}
 export function addEmoji(problemId, userId, emoji){
     if(problems[problemId].emoji === undefined){
-        problems[problemId].emoji = {};
+        build(problemId);
     }
     let obj = problems[problemId].emoji;
-    if(obj[emoji] === undefined){
-        obj[emoji] = {};
-    }
+
     if(obj[emoji][userId] === true){
         obj[emoji][userId] = false;
     }
@@ -177,7 +180,7 @@ function Count(obj){
 }
 export function askEmoji(problemId){
     if(problems[problemId].emoji === undefined){
-        problems[problemId].emoji = {};
+        build(problemId);
     }
     let obj = problems[problemId].emoji;
     let ans = "";
