@@ -115,8 +115,6 @@ export function eraseProblem(id){
 // {name, adder, tag, dif, text, hint, soloution, emoji}
 // {soloution / hint / text : {isText, text}}
 
-export const emojiArr = []; ////////
-
 export function addProblem(p){
     let id=chooseId();
     problems[id]=Deep(p);
@@ -135,6 +133,8 @@ export function printListP(arr){
         str="لیست خالی است!";
     return str;           
 }
+
+export const emojiArr = [":heart:",":+1:",":-1:",":sob:",":pear:"]; ////////
 
 export function isEmoji(emoji){
     let is = false;
@@ -159,11 +159,11 @@ export function addEmoji(problemId, userId, emoji){
         obj[emoji][userId] = true;
     }
 
-    if(obj["LIKE"][userId] === true && obj["DISLIKE"][userId] === true){
-        if(emoji === "LIKE")
-            obj["DISLIKE"][userId] = false;
-        if(emoji === "DISLIKE")
-            obj["LIKE"][userId] = false;
+    if(obj[":+1:"][userId] === true && obj[":-1:"][userId] === true){
+        if(emoji === ":+1:")
+            obj[":-1:"][userId] = false;
+        if(emoji === ":-1:")
+            obj[":+1:"][userId] = false;
     }
     return "انجام شد."
 }
