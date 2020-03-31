@@ -3,7 +3,7 @@ import {emojiArr} from "./dataHandle.mjs"
 export const keyboards = {
     preStart:             undefined,
     tellName:             undefined,
-    start:                [["سوال بده","سوال بگیر"],["میز کار ادمین"]],
+    start:                [["سوال بده","سوال بگیر"]],
     nameOrTag:            [["انتخاب تگ","انتخاب اسم"],["لیست سوالات"],["لیست سوالاتی که زور زدم روشون"],["رنکینگ"],["برگرد اول کار"]],
     chooseName:           [["برگرد اول کار"]],
     chooseTag:            [["هر تگی"],["برگرد اول کار"]],

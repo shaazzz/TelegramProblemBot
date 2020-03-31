@@ -158,7 +158,7 @@ const states = {
             }
         },
         {            
-            key : (s)=> s==="میز کار ادمین",
+            key : (s)=> s==="ادمین",
             func: async(msg)=>{
                 let usr= users[msg.from.id];
                 if(usr.isAdmin){
