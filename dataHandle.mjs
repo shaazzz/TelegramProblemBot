@@ -158,13 +158,13 @@ export function addEmoji(problemId, userId, emoji){
     else{
         obj[emoji][userId] = true;
     }
-
+/*
     if(obj[":+1:"][userId] === true && obj[":-1:"][userId] === true){
         if(emoji === ":+1:")
             obj[":-1:"][userId] = false;
         if(emoji === ":-1:")
             obj[":+1:"][userId] = false;
-    }
+    }*/
     return "انجام شد."
 }
 function Count(obj){
