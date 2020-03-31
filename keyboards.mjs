@@ -1,4 +1,4 @@
-import {emojiArr} from "./dataHandle"
+import {emojiArr} from "./dataHandle.mjs"
 
 export const keyboards = {
     preStart:             undefined,
