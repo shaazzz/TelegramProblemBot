@@ -134,7 +134,7 @@ export function printListP(arr){
     return str;           
 }
 
-export const emojiArr = ['🐔', '🐷', '🐑', '🐇'];
+export const emojiArr = ['👍', '👎', '🍐', '❤️', '😭'];
 
 export function isEmoji(emoji){
     let is = false;
