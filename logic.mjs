@@ -1,7 +1,7 @@
 import fs from "fs"
 import { sendMessage , sendBackup, sendPhoto} from "./api.mjs"
 import { keyboards } from "./keyboards.mjs"
-import { listOfTags, listOfProblems, giveProblem, anyNew, giveNewProblem, eraseProblem, addProblem, addNewProblem, save as save2, printListP, isEmoji, addEmoji, askEmoji} from "./dataHandle.mjs"
+import { listOfTags, listOfProblems, giveProblem, anyNew, giveNewProblem, eraseProblem, addProblem, addNewProblem, save as save2, printListP, isEmoji, addEmoji, askEmoji, replaceProblem} from "./dataHandle.mjs"
 
 var config= JSON.parse( fs.readFileSync("./config.json", "utf-8") );
 
@@ -523,7 +523,7 @@ const states = {
                     await send("سختی سوال : " + usr.lstGiven.dif, msg.from.id);
                     let str = "تگ های سوال : ";
                     for(let y in usr.lstGiven.tag)
-                        str=str + y + " ";
+                        str=str + y + "-";
                     await send(str, msg.from.id);
                     await send("متن سوال :", msg.from.id);
                     await sendTextOrPhoto(usr.lstGiven.text, msg.from.id);
@@ -539,14 +539,14 @@ const states = {
                 }                
             }
         },
-     /*   {            
+        {            
             key : (s)=> s==="ادیت سوال",
             func: async(msg)=>{
                 let usr= users[msg.from.id];
                 usr.state="startEdit";
                 await send("آیدی سوال را وارد کنید:", msg.from.id);
             }
-        },*/
+        },
         {
             key : (s)=> s==="ذخیره کردن اطلاعات",
             func : async (msg)=>{
@@ -770,7 +770,7 @@ const states = {
             }
         }
     ],
-    /*
+    
     startEdit:[
         restart,
         {
@@ -787,18 +787,155 @@ const states = {
     chooseEdit:[
         restart,
         {
-            key : (s)=> s==="نام سوال"
+            key : (s)=> s==="نام سوال",
             func : async(msg)=>{
-
+                let usr = users[msg.from.id];
+                usr.state = "EditName";
+                await send("نام جدید را وارد کنید.", msg.from.id);
             }
         },
         {
-            key : (s)=> s===""
+            key : (s)=> s==="سختی سوال",
             func : async(msg)=>{
-
+                let usr = users[msg.from.id];
+                usr.state = "EditDif";
+                await send("سختی جدید را وارد کنید.", msg.from.id);
+            }
+        },
+        {
+            key : (s)=> s==="تگ های سوال",
+            func : async(msg)=>{
+                let usr = users[msg.from.id];
+                usr.state = "EditTag";
+                await send("تگ های جدید را وارد کنید.", msg.from.id);
+            }
+        },
+        {
+            key : (s)=> s==="صورت سوال",
+            func : async(msg)=>{
+                let usr = users[msg.from.id];
+                usr.state = "EditText";
+                await send("صورت جدید را وارد کنید.", msg.from.id);
+            }
+        },
+        {
+            key : (s)=> s==="هینت سوال",
+            func : async(msg)=>{
+                let usr = users[msg.from.id];
+                usr.state = "EditHint";
+                await send("هینت جدید را وارد کنید.", msg.from.id);
+            }
+        },
+        {
+            key : (s)=> s==="جواب سوال",
+            func : async(msg)=>{
+                let usr = users[msg.from.id];
+                usr.state = "EditSol";
+                await send("جواب جدید را وارد کنید.", msg.from.id);
             }
         }
-    ] */  
+    ],
+   
+    EditName:[
+        restart,
+        {
+            key : (s)=> true,
+            func: async(msg)=>{
+                let usr= users[msg.from.id];
+                let txt= msg.text;
+                usr.lstGiven.name= txt;
+                usr.state="chooseEdit";
+                replaceProblem(usr.lstGiven, usr.lstGivenId);
+                await send("انجام شد", msg.from.id);
+            }
+        }
+    ],
+    EditTag:[
+        restart,
+        {
+            key : (s)=> true,
+            func: async(msg)=>{
+                let usr= users[msg.from.id];
+                let txt= msg.text;
+                usr.lstGiven.tag={};
+                let s=txt.split('-');
+                for(let i in s){
+                    s[i]= normalStr(s[i]);
+                    usr.lstGiven.tag[s[i]]=true;
+                }
+                usr.state="chooseEdit";
+                replaceProblem(usr.lstGiven, usr.lstGivenId);
+                await send("انجام شد", msg.from.id);
+            }
+        }
+    ],
+    EditDif:[
+        restart,
+        {
+            key : (s)=> (s === "آسون" || s === "متوسط" || s === "سخت"),
+            func: async(msg)=>{
+                let usr= users[msg.from.id];
+                usr.lstGiven.dif= msg.text;
+                usr.state="chooseEdit";
+                replaceProblem(usr.lstGiven, usr.lstGivenId);
+                await send("انجام شد", msg.from.id);
+            }
+        }
+    ],
+    EditText:[
+        restart,
+        {
+            key : (s)=> true,
+            func: async(msg)=>{
+                let usr= users[msg.from.id];
+                let p = inputTextOrPhoto(msg);
+                if(p.error === true){
+                    await send("فرمت باید یا عکس(نه فایل) باشد یا متن! لطفا دوباره تلاش کنید!", msg.from.id);
+                    return;
+                }
+                usr.lstGiven.text= p;
+                usr.state="chooseEdit";
+                replaceProblem(usr.lstGiven, usr.lstGivenId);
+                await send("انجام شد", msg.from.id);
+            }
+        }
+    ],
+    EditHint:[
+        restart,
+        {
+            key : (s)=> true,
+            func: async(msg)=>{
+                let usr= users[msg.from.id];
+                let p = inputTextOrPhoto(msg);
+                if(p.error === true){
+                    await send("فرمت باید یا عکس(نه فایل) باشد یا متن! لطفا دوباره تلاش کنید!", msg.from.id);
+                    return;
+                }
+                usr.lstGiven.hint= p;
+                usr.state="chooseEdit";
+                replaceProblem(usr.lstGiven, usr.lstGivenId);
+                await send("انجام شد", msg.from.id);
+            }
+        }
+    ],
+    EditSol:[
+        restart,
+        {
+            key : (s)=> true,
+            func: async(msg)=>{
+                let usr= users[msg.from.id];
+                let p = inputTextOrPhoto(msg);
+                if(p.error === true){
+                    await send("فرمت باید یا عکس(نه فایل) باشد یا متن! لطفا دوباره تلاش کنید!", msg.from.id);
+                    return;
+                }
+                usr.lstGiven.soloution= p;
+                usr.state="chooseEdit";
+                replaceProblem(usr.lstGiven, usr.lstGivenId);
+                await send("انجام شد", msg.from.id);
+            }
+        }
+    ],
 };
 
 export async function sendToAdmins(str){

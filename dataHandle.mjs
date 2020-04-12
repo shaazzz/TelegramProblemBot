@@ -121,6 +121,10 @@ export function addProblem(p){
     update_tags();
     return id;
 }
+export function replaceProblem(p, id){
+    problems[id]=Deep(p);
+    update_tags();
+}
 export function addNewProblem(p){
     newProblems[newProblems.length]=Deep(p);
 }

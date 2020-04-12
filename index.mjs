@@ -20,5 +20,3 @@ async function main(){
     }
 }
 main();
-
-const chatMe=178926524; // to be erased
