@@ -1,7 +1,8 @@
 import fs from "fs"
-import { sendMessage , sendBackup, sendPhoto} from "./api.mjs"
+import { sendMessage , sendBackup, sendPhoto, sendDocument} from "./api.mjs"
 import { keyboards } from "./keyboards.mjs"
 import { listOfTags, listOfProblems, giveProblem, anyNew, giveNewProblem, eraseProblem, addProblem, addNewProblem, save as save2, printListP, isEmoji, addEmoji, askEmoji, replaceProblem} from "./dataHandle.mjs"
+import { sendDocument } from "./api.mjs";
 
 var config= JSON.parse( fs.readFileSync("./config.json", "utf-8") );
 
@@ -46,8 +47,10 @@ var send= async (text, id)=>{
 async function sendTextOrPhoto(obj, chat_id){
     if(obj.isText === true)
         await send(obj.text, chat_id);
-    else
-        await sendPhoto(obj.text, chat_id, keyboards[users[chat_id].state]);
+    else if(obj.isText === "file")
+        await sendDocument(obj.text, chat_id, keyboards[users[chat_id].state])
+    else   
+        await sendPhoto(obj.text, chat_id, keyboards[users[chat_id].state]);    
 }
 async function sendProblem(prob_id, chat_id){
     await send(`آیدی سوال : ${prob_id}`, chat_id);
@@ -56,10 +59,12 @@ async function sendProblem(prob_id, chat_id){
     await sendTextOrPhoto(p.text, chat_id);
 }
 function inputTextOrPhoto(msg){
-    if(msg.text === undefined && msg.photo === undefined)
+    if(msg.text === undefined && msg.photo === undefined && msg.document === undefined)
         return {error : true};
     if(msg.photo !== undefined)
         return {isText : false, text : msg.photo[0].file_id};
+    else if(msg.document !== undefined)
+        return {isText : "file", text : msg.document.file_id};
     else
         return {isText : true, text : msg.text};
 }
@@ -681,7 +686,7 @@ const states = {
                 let usr= users[msg.from.id];
                 let p = inputTextOrPhoto(msg);
                 if(p.error === true){
-                    await send("فرمت باید یا عکس(نه فایل) باشد یا متن! لطفا دوباره تلاش کنید!", msg.from.id);
+                    await send("فرمت باید عکس یا فایل یا متن باشد! لطفا دوباره تلاش کنید!", msg.from.id);
                     return;
                 }
                 usr.lstGiven.text= p;
@@ -698,7 +703,7 @@ const states = {
                 let usr= users[msg.from.id];
                 let p = inputTextOrPhoto(msg);
                 if(p.error === true){
-                    await send("فرمت باید یا عکس(نه فایل) باشد یا متن! لطفا دوباره تلاش کنید!", msg.from.id);
+                    await send("فرمت باید عکس یا فایل یا متن باشد! لطفا دوباره تلاش کنید!", msg.from.id);
                     return;
                 }
                 usr.lstGiven.hint= p;
@@ -715,7 +720,7 @@ const states = {
                 let usr= users[msg.from.id];
                 let p = inputTextOrPhoto(msg);
                 if(p.error === true){
-                    await send("فرمت باید یا عکس(نه فایل) باشد یا متن! لطفا دوباره تلاش کنید!", msg.from.id);
+                    await send("فرمت باید عکس یا فایل یا متن باشد! لطفا دوباره تلاش کنید!", msg.from.id);
                     return;
                 }
                 usr.lstGiven.soloution= p;
@@ -890,7 +895,7 @@ const states = {
                 let usr= users[msg.from.id];
                 let p = inputTextOrPhoto(msg);
                 if(p.error === true){
-                    await send("فرمت باید یا عکس(نه فایل) باشد یا متن! لطفا دوباره تلاش کنید!", msg.from.id);
+                    await send("فرمت باید عکس یا فایل یا متن باشد! لطفا دوباره تلاش کنید!", msg.from.id);
                     return;
                 }
                 usr.lstGiven.text= p;
@@ -908,7 +913,7 @@ const states = {
                 let usr= users[msg.from.id];
                 let p = inputTextOrPhoto(msg);
                 if(p.error === true){
-                    await send("فرمت باید یا عکس(نه فایل) باشد یا متن! لطفا دوباره تلاش کنید!", msg.from.id);
+                    await send("فرمت باید عکس یا فایل یا متن باشد! لطفا دوباره تلاش کنید!", msg.from.id);
                     return;
                 }
                 usr.lstGiven.hint= p;
@@ -926,7 +931,7 @@ const states = {
                 let usr= users[msg.from.id];
                 let p = inputTextOrPhoto(msg);
                 if(p.error === true){
-                    await send("فرمت باید یا عکس(نه فایل) باشد یا متن! لطفا دوباره تلاش کنید!", msg.from.id);
+                    await send("فرمت باید عکس یا فایل یا متن باشد! لطفا دوباره تلاش کنید!", msg.from.id);
                     return;
                 }
                 usr.lstGiven.soloution= p;
