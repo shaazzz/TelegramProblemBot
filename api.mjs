@@ -38,7 +38,7 @@ export async function sendDocument(link, chat_id, reply_markup){
     await fetch( `${url}sendDocument`, {
         method : "POST",
        headers : { 'Content-Type': 'application/json' },
-       body : JSON.stringify( { chat_id, photo : link ,reply_markup } )
+       body : JSON.stringify( { chat_id, document : link ,reply_markup } )
     });  
 }
 
