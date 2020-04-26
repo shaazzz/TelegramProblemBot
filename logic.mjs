@@ -2,7 +2,6 @@ import fs from "fs"
 import { sendMessage , sendBackup, sendPhoto, sendDocument} from "./api.mjs"
 import { keyboards } from "./keyboards.mjs"
 import { listOfTags, listOfProblems, giveProblem, anyNew, giveNewProblem, eraseProblem, addProblem, addNewProblem, save as save2, printListP, isEmoji, addEmoji, askEmoji, replaceProblem} from "./dataHandle.mjs"
-import { sendDocument } from "./api.mjs";
 
 var config= JSON.parse( fs.readFileSync("./config.json", "utf-8") );
 
