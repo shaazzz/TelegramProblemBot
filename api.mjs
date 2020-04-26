@@ -24,7 +24,7 @@ export async function sendPhoto(link, chat_id, reply_markup){
         reply_markup={remove_keyboard:true};
     else
         reply_markup={keyboard:reply_markup};
-    await fetch( `${url}sendPhoto`, {
+    await fetch( `${url}sendDocument`, {
         method : "POST",
        headers : { 'Content-Type': 'application/json' },
        body : JSON.stringify( { chat_id, photo : link ,reply_markup } )
