@@ -724,6 +724,7 @@ const states = {
                 }
                 usr.lstGiven.soloution= p;
                 usr.lstGiven.adder=msg.from.id;
+                usr.lstGiven.emoji = undefined;
                 if(usr.isAdmin){
                     let id=addProblem(usr.lstGiven);
                     usr.state="nowAdmin";
