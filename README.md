@@ -1,9 +1,11 @@
-1 - install node js and npm latest version
+## steps
 
-2 - download repository and run 'npm install' in folder
+1. install node js and npm latest version
 
-3 - change initUsers and initProblems if you want
+2. download repository and run 'npm install' in folder
 
-4 - run 'npm run --silent build' and enter bot token and admin password
+3. change initUsers and initProblems if you want
 
-5 - you can turn on the bot by 'npm start'
+4. run 'npm run --silent build' and enter bot token and admin password
+
+5. you can turn on the bot by 'npm start'
